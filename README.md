@@ -1,6 +1,5 @@
 # Statistical-analysis-and-Data-visualizations
 
-
 ## Project 1: Education vs Prison Costs and Handgun Homicides in USA
 
 ### Overview
