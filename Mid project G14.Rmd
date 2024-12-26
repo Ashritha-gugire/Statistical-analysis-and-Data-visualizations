@@ -1,0 +1,295 @@
+---
+title: "Redesigning the Bad Graph"
+output: html_document
+date: "2023-03-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+ 
+ 
+Redesigning of the bad graph: This is link for the bad graph: https://money.cnn.com/interactive/news/handgun-homicides/ 
+
+We would like to redesign the above pie charts into an interactive plot, by separating the regions with in USA map
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(maps)
+library(usmap)
+```
+```{r}
+
+
+# Data extracted from dot plot 
+
+edu_cost <- c(8500,8000,9000,9200,8800,12000,10500,8700,9100,
+              7500,10200,9200,9300,9300,9000,9700,11500,12500,9700,
+              9700,9500,9800,9900,8500,11500,16300,18500,8000,
+              9850,9800,6500,12500,13500,7500,14000,9600,8500,10200,10000)
+prison_cost <- c(16500,23500,23000,47000,29000,48000,32000,19000,19800,
+                 17000,36000,13500,31500,15500,13000,15000,45000,36000,
+                 27000,40000,21500,29000,34000,19000,32100,54000,58700,
+                 28500,38600,23500,17500,41300,48500,20000,48700,24600,
+                 45000,25000,37600)
+differ <- c(8000, 15500,14000,37800,20200,36000,21500,10300,10700,9500,25800,4300,22200,
+            6200,4000,5300,33500,23500,17300,30300,12000,19200,24100,10500,20600,37700,
+            40200,20500,28750,13700,11000,28800,35000,12500,34700,15000,36500,14800,27600)
+states <- c("Alabama", "Arizona","Arkansas","California","Colorado","Connecticut",
+               "Delware","Florida","Georgia","Idaho","Illinois","Indiana","Iowa","Kansas",
+               "Kentucky","Louisiana","Maine","Maryland","Michigan","Minnesota","Missouri",
+               "Montana","Nebraska","Nevada","New Hampshire","New Jersey","New York","North  Carolina","North Dokota","Ohio","Oklahoma","Pennsylvania","Rhode Island","Texas","Vermont","Virginia","Washington","West Virginia","Wisconsin")
+
+dataset1 <- cbind(edu_cost,prison_cost)
+dataset1
+```
+```{r}
+names<- c("Education Cost", "Prison Cost")
+
+colnames(dataset1) <- names
+rownames(dataset1) <- states
+
+
+dataset2 <- as.data.frame(dataset1) # make a data.frame
+types = rownames(dataset2)
+dataset2$States = factor(states, ordered = T, levels = rev(states))
+
+
+rownames(dataset2) = NULL # removing row names from the data set (Optional)
+
+```
+
+```{r}
+dataset2$difference <- dataset2$`Prison Cost`- dataset2$`Education Cost`
+ggplot(dataset2, aes(x= edu_cost, y= States)) + geom_point(shape = 21,
+    fill = "blue",
+    color = "black",
+    size = 3) + labs(x = "Education" , title = "Bad Graph, Education cost per student in each state")
+
+
+student_data <- ggplot(dataset2, aes(x = edu_cost,  y = reorder(States, edu_cost))) +
+  geom_point(
+    shape = 21,
+    fill = "blue",
+    size = 3,
+    color = "black"
+  ) +
+  labs(x = "Education Cost",
+       y = "States",
+       title = "Education Cost spent for student in each state")
+student_data
+```
+
+
+
+```{r}
+ggplot(dataset2, aes(x = prison_cost,  y = States)) +
+  geom_point(
+    shape = 21,
+    fill = "pink",
+    size = 3,
+    color = "black"
+  ) + 
+  labs(x = "Prison Cost",
+       y = "States",
+       title = "Bad Graph, Prison Cost spent for student in each state")
+
+prisoner_data <- ggplot(dataset2, aes(x = prison_cost,  y = reorder(States, prison_cost))) +
+  geom_point(
+    shape = 21,
+    fill = "pink",
+    size = 3,
+    color = "black"
+  ) +
+  labs(x = "Prison Cost",
+       y = "States",
+       title = "Prison Cost spent for student in each state")
+prisoner_data
+```
+```{r}
+p <- ggplot(dataset2, aes(y= States, x= edu_cost, xend = prison_cost)) +
+  geom_segment(aes(x= edu_cost, xend = prison_cost, yend = States)) +
+  geom_point(aes(x= edu_cost), size = 2 , color = "red") +
+  geom_point(aes(x= prison_cost), size = 2, color = "blue") +
+  labs(title = "Amount spent by each state on Student and Prisinor", x="Fund spend on each Student and Jailer by agencies")
+ggplotly(p)
+```
+
+```{r}
+p_diff <-ggplot(dataset2, aes(y= reorder(States, edu_cost), x= edu_cost, xend = prison_cost)) +
+  geom_segment(aes(x= edu_cost, xend = prison_cost, yend = States)) +
+  geom_point(aes(x= edu_cost), size = 1.5 , color = "red") +
+  geom_point(aes(x= prison_cost), size = 1.5, color = "blue") +
+  geom_text(data = dataset2, aes(label = paste("Diff:",differ), x= edu_cost, y= States),
+             color = "#4a4e4d",
+             size = 2.5,
+            nudge_y = -0.35,
+             family = "Segoe UI Semibold")+
+            labs(title = "Difference of Amount spent by each state on Student and Prisinor", x= "Difference of High to Low funds per each state", y= "States")
+ggplotly(p_diff)
+```
+
+
+```{r}
+us_states = map_data("state");
+
+#map each state to towards there directions
+Cancer$direction[Cancer$state %in% 
+          c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont", "New Jersey", "New York", "Pennsylvania")] <- "East Coast"
+Cancer$direction[Cancer$state %in% 
+          c("Illinois", "Indiana", "Michigan", "Ohio", "Wisconsin", "Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota")] <- "Midwest"
+Cancer$direction[Cancer$state %in% 
+          c("Delaware", "Florida", "Georgia", "Maryland", "North Carolina", "South Carolina", "Virginia", "District Of Columbia", "West Virginia", "Alabama", "Kentucky", "Mississippi", "Tennessee", "Arkansas", "Louisiana", "Oklahoma", "Texas")] <- "Gulf Coast"
+Cancer$direction[Cancer$state %in% 
+          c("Alaska", "California", "Hawaii", "Oregon", "Washington", "Arizona", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Utah", "Wyoming")] <- "West Coast"
+
+
+#data extracted from the pie charts
+
+states <- c("alabama", "alaska", "arizona","arkansas","california","colorado","connecticut",
+               "delware","florida","georgia","hawaii","idaho","illinois","indiana","iowa","kansas",
+               "kentucky","louisiana","maine","maryland", "massachusetts","michigan","minnesota","mississippi","missouri",
+               "montana","nebraska","nevada","new hampshire","new jersey","new mexico","new york","north carolina",
+               "north dokota","ohio","Oklahoma","oregon","pennsylvania","rhode island","south carolina","south dakota","tennessee","texas","utah","vermont", "virginia","washington","west virginia","wisconsin", "wyoming","district of columbia")
+
+percofdeaths <- c(0,31,74,47,71,53,57,64,0,88,0,88,97,63,37,42,77,93,25,96,43,59,84,88,57,29,83,61,17,88,75,89,70,50,54,76,33,81,20,57,60,70,71,58,50,53,73,53,75,64,48)
+
+deathscount <- c(0,5,165,52,866,39,54,18,0,326,0,15,364,115,7,31,77,372,3,262,52,267,36,121,158,2,35,46,1,238,45,394,235,3,187,99,13,379,1,126,3,172,497,15,2,11,58,23,60,7,43)
+
+prisonercost <- c(17000, 52633,22000,21900,64642,39303,62159,39080,19900,20000,0,18000,36000,14000,37908,17000,13000,16000,45000,44601,55170,27000,41366,0,21500,28000,34000,19000,33000,61603,36832,69355,28000,37000,25000,17000,44021,42727,58564,0,0,0,20500,28000,57615,24000,37841,25000,38644,0,0)
+
+dataone <- cbind(percofdeaths,deathscount,prisonercost)
+
+names<- c("perofdeaths","deathscount","prisonercost")
+
+colnames(dataone) <- names
+rownames(dataone) <- states
+
+
+datatwo <- as.data.frame(dataone) # make a data.frame
+
+types = rownames(datatwo)
+datatwo$region = factor(states, ordered = T)
+datatwo$fips<-c("AL","AZ","AR","AK","CA","CO","CT","DE","FA","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC")
+
+mapdata<-inner_join(us_states, datatwo, by = "region")
+
+map1 <- ggplot() 
+map1 = map1 + geom_polygon(data=mapdata, aes(x=long, y=lat, group=group, fill=direction))+ geom_point(data= mapdata, aes(x= long, y= lat, size = deathscount))+theme(legend.position = "bottom")
+map1
+
+```
+```{r}
+mapdata$lat.x[mapdata$direction=="East Coast"] <- mapdata$lat[mapdata$direction == "East Coast"]
+mapdata$long.x[mapdata$direction=="East Coast"] <- mapdata$long[mapdata$direction == "East Coast"] +5
+
+mapdata$lat.x[mapdata$direction=="Midwest"] <- mapdata$lat[mapdata$direction == "Midwest"]
+mapdata$long.x[mapdata$direction=="Midwest"] <- mapdata$long[mapdata$direction == "Midwest"]
+
+mapdata$lat.x[mapdata$direction=="Gulf Coast"] <- mapdata$lat[mapdata$direction == "Gulf Coast"]-3
+mapdata$long.x[mapdata$direction=="Gulf Coast"] <- mapdata$long[mapdata$direction == "Gulf Coast"]
+
+mapdata$lat.x[mapdata$direction=="West Coast"] <- mapdata$lat[mapdata$direction == "West Coast"] -2
+mapdata$long.x[mapdata$direction=="West Coast"] <- mapdata$long[mapdata$direction == "West Coast"] -10
+
+
+
+Map1.1<- ggplot(mapdata,  aes(x=long.x, y=lat.x)) +
+  geom_polygon(aes(group = group, fill=direction))+
+  geom_point(data= mapdata, aes(x= long.x, y= lat.x, size = deathscount))+scale_size(name = " ", range=c(0.5,2))+guides(size=guide_legend("deaths"))+theme(legend.position="bottom")+
+  labs(title="United States region wise demographics",
+                    subtitle='Handgun Deaths',
+       x="longitude",y="latitude",
+                    caption=c('Source: 2011 F.B.I. Crime in the United States report'))+theme(panel.background = element_blank(),  
+    panel.grid = element_blank(), 
+    axis.line = element_blank(), 
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank())
+
+plot(Map1.1)
+```
+
+```{r}
+usa <- map_data("usa")
+states <- map_data("state")
+
+
+
+ggplot(mapdata, aes(map_id = region)) + geom_map(aes(fill = deathscount ), map = states, col = "white") +
+  expand_limits(x = states$long, y = states$lat) +
+  scale_fill_distiller(name = "Death count", palette = "Spectral") +
+  labs(title = "US Death Rate per 100,000 Population, 2011", x = "longitude", y = "latitude",
+       caption = "Source: 2011 F.B.I. Crime in the United States report") +
+  coord_fixed(1.3) +
+  theme_minimal()
+```
+
+
+```{r}
+westcoast<-plot_usmap(include = c("AL", "CA", "HI", "AZ", "OR","WA","MN","ID","CO","NM", "WY","UT","NV")) +
+  labs(title = "West Coast Region") +
+  theme(panel.background = element_rect(color = "blue"))
+plot(westcoast)
+
+```
+
+
+
+
+
+```{r}
+plot_usmap(data = countypov, values = "pct_pov_2014", include =  c("AL", "CA", "HI", "AZ", "OR","WA","MN","ID","CO","NM", "WY","UT","NV"),color= "blue") + 
+  scale_fill_continuous(low = "white", high = "yellow" ,name = "Poverty Percentage Estimates", label = scales::comma) + 
+  labs(title = "New England Region", subtitle = "Poverty Percentage Estimates for New England Counties in 2011") +
+  theme(legend.position = "right")
+```
+
+
+
+
+
+```{r}
+
+library(viridis)
+
+Coastalregion <- mapdata %>%
+  filter(direction %in% c("East Coast", "Gulf Coast"))
+
+TX_to_NY=ggplot(Coastalregion,aes(x = long, y = lat, group = group, fill = deathscount)) +
+  geom_polygon(color = "black")+
+  theme_void()+scale_fill_viridis(name = "Handgun Shots")+labs(title= "combined count for Gulf and East coasts", subtitle ="Handgun shots per each state")
+
+plot(TX_to_NY)
+
+```
+```{r}
+TX_and_NY=ggplot(Coastalregion, aes(x = long, y = lat.x, group = group, fill = prisonercost)) +
+  geom_polygon(color = "black")+theme_void()+scale_fill_viridis(name = "Jailer Money")+labs(title= "combined count for Gulf and East coasts", subtitle ="USA spent on jailers in each state")
+plot(TX_and_NY)
+```
+
+
+
+```{r}
+plot_usmap( data = countypov, values = "pct_pov_2014", include =  c("CT", "ME", "MA", "NH", "RI", "VT", "NJ", "NY", "PA") ,color = "black")+  scale_fill_continuous(low = "white", high = "blue", name = "poverty percentage estimates", label = scales::comma) + 
+  labs(title = "East Coast", subtitle = "Poverty in Coastal region in 2011") +theme(legend.position = "bottom")
+```
+
+
+```{r}
+plot_usmap( data = countypov, values = "pct_pov_2014", include =  c("TX","AL","FA","LA","MS","DE", "GA", "MD", "NC", "SC", "VA", "DC", "WV", "AL", "KY", "TN", "AK", "OK") ,color = "black") + 
+  scale_fill_continuous(low = "white", high = "red", name = "poverty percentage estimates", label = scales::comma) + 
+  labs(title = "Gulf Coast", subtitle = "Poverty in Coastal region in 2011") +
+  theme(legend.position = "bottom")
+```
+
